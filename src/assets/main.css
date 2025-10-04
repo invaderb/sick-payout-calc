@@ -1,0 +1,7 @@
+:root[data-theme='light'] {
+  --icon-color: #000;
+}
+
+:root[data-theme='dark'] {
+  --icon-color: #fff;
+}
