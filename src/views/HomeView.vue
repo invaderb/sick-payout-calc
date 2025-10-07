@@ -392,6 +392,10 @@ function processData() {
 			// loop in reverse order to get the most recent and if found break
 			for (let m = fullData.length - 1; m >= 0; m--) {
 				if (fullData[m]!.employeeId === fullEntry.employeeId) {
+					// also if fullData[i].date and starttime and end time are the same as fullEntry then skip
+					if (fullData[m]!.date === fullEntry.date && fullData[m]!.startTime === fullEntry.startTime && fullData[m]!.endTime === fullEntry.endTime) {
+						continue;
+					}
 					// update the ytdUsed and balance on the nextActivity
 					fullEntry.ytdUsed = fullEntry.ytdUsed + (fullData[m]!.approvedHours || 0);
 					fullEntry.balance = fullEntry.balance - (fullData[m]!.approvedHours || 0);
