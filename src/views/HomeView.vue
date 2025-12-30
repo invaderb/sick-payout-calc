@@ -121,7 +121,7 @@ function parseActivityContent(content: string): ActivityInfo | null {
 		const endTime = endMatch ? endMatch[1] : ''
 
 		// Extract caregiver: "assigned to caregiver Karen Frauens"
-		const caregiverMatch = content.match(/assigned to caregiver ([^;)]+)/i)
+		const caregiverMatch = content.match(/assigned to caregiver ([^*)\n]+?)(?:\s*\*|\s*\))/i)
 		const caregiver = caregiverMatch ? caregiverMatch[1]!.trim() : ''
 		if (date && startTime && endTime && caregiver) {
 			// Calculate duration
