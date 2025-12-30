@@ -326,7 +326,10 @@ function processData() {
 		for (let j = 0; j < careLogs.length; j++) {
 			const care = careLogs[j];
 			const careGiverName = care!["Caregiver Name"];
-			if (activity.caregiver === careGiverName && (
+      // need to clean up the carelog caregiver name if they have an appended * in the name
+      const careName = careGiverName.split(' *');
+      const cname = careName.length > 1 ? careName[0] : careGiverName;
+			if (activity.caregiver === cname && (
 				(care!["Official Clock In"] && activity.date === care!["Official Clock In"].split('T')[0]) || 
 				(care!["Official Clock Out"] && activity.date === care!["Official Clock Out"].split('T')[0]))
 			) {
@@ -336,7 +339,7 @@ function processData() {
 			}
 		}
 		if (fullEntry.rate === null || fullEntry.employeeId === null) {
-			errors.value.push(`Could not find matching care log for activity: ${activity.rawText}`);
+			errors.value.push(`Could not find matching caregiver in care log for activity: ${activity.rawText}`);
 			hasErrors.value = true;
 			endOfErrors();
 			continue;
