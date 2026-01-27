@@ -447,7 +447,7 @@ function processData() {
 			approvedHours: 0,
 			totalPay: 0
 		};
-		// loop through the care logs and update the rate and employee id by matching the activity cargiver name
+		// loop through the care logs and update the rate and employee id by matching the activity caregiver name
 		for (let j = 0; j < careLogs.length; j++) {
 			const care = careLogs[j];
 			const careGiverName = care!["Caregiver Name"];
@@ -542,8 +542,8 @@ function processData() {
 			}
 			// calculate the approved hours based on the plan limit, the ytd used and the balance
 			const availableHours = fullEntry.planLimit - fullEntry.ytdUsed;
-			const availableBalance = Math.min(fullEntry.balance, availableHours);
-			fullEntry.canUseLimit = availableHours;
+			fullEntry.canUseLimit = availableHours > 0 ? availableHours : 0;
+			const availableBalance = Math.min(fullEntry.balance, fullEntry.canUseLimit);
 			fullEntry.approvedHours = Math.min(fullEntry.durationHours, availableBalance);
 		}
 		
