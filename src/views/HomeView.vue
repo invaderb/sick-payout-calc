@@ -56,7 +56,7 @@ const activityLogSchema = z.object({
 interface PTOLog {
 	"Employee Name": string
 	"Employee ID": string
-	"Accrue Thru Date": string
+	"Accrue Thru": string
 	"Year Ending": string
 	"Plan Name": string
 	"Accrual Rate": number
@@ -67,14 +67,8 @@ interface PTOLog {
 }
 
 const ptoLogSchema = z.object({
-	"Employee Name": z.string(),
 	"Employee ID": z.string(),
-	"Accrue Thru Date": z.string().or(z.date()),
-	"Year Ending": z.string().or(z.date()),
 	"Plan Name": z.string(),
-	"Accrual Rate": z.number(),
-	"Carry Over": z.number(),
-	"Accrued": z.number(),
 	"Used": z.number(),
 	"Balance": z.number()
 })
