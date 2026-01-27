@@ -65,7 +65,7 @@ function handleConfirm() {
 				Once selected click the "Load and Process" button to process the data and display any errors or logs in the sidebar. If there are no errors, you can proceed to export the calculated sick leave payout data to a new Excel file by clicking the "Save Data to File" button. <br /><br />
 				Make sure to review the exported data for accuracy before using it for payroll processing. If you encounter any issues or have questions, feel free to reach out for support.
 			</p>
-			<p>
+			<div>
 				Requirements: <br />
 				• There are 4 required files that must be provided in the Excel format
 				<ul>
@@ -81,7 +81,7 @@ function handleConfirm() {
 					<li>"care_logs" for the Care Logs File</li>
 					<li>"hire_date" for the Employee Hire Date File</li>
 				</ul>
-			</p>
+			</div>
 		</section>
 	</HelpDialog>
 </template>

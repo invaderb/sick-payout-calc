@@ -2,6 +2,7 @@
 import { nextTick, ref } from 'vue';
 import FileDragDrop from '@/components/FileDragDrop.vue';
 import { utils, read, write } from 'xlsx';
+import { z } from "zod";
 
 interface ActivityInfo {
 	caregiver: string
@@ -36,10 +37,23 @@ interface CareLog {
 	[key: string]: string | number | Date | undefined
 }
 
+const careLogSchema = z.object({
+	"Caregiver Name": z.string(),
+	"Official Clock In": z.string(),
+	"Official Clock Out": z.string(),
+	"Pay Rate Amount": z.number(),
+	"Caregiver ID": z.string()
+})
+
 interface ActivityLog {
 	Date: string
 	Description: string
 }
+
+const activityLogSchema = z.object({
+	Date: z.string(),
+	Description: z.string()
+})
 
 interface PTOLog {
 	"Employee Name": string
@@ -51,8 +65,21 @@ interface PTOLog {
 	"Carry Over": number
 	"Accrued": number
 	"Used": number
-	Balance: number
+	"Balance": number
 }
+
+const ptoLogSchema = z.object({
+	"Employee Name": z.string(),
+	"Employee ID": z.string(),
+	"Accrue Thru Date": z.string(),
+	"Year Ending": z.string(),
+	"Plan Name": z.string(),
+	"Accrual Rate": z.number(),
+	"Carry Over": z.number(),
+	"Accrued": z.number(),
+	"Used": z.number(),
+	"Balance": z.number()
+})
 
 interface HireLog {
 	"Employee Name": string
@@ -61,8 +88,20 @@ interface HireLog {
 	"Years Service": number
 }
 
+const hireLogSchema = z.object({
+	"Employee Name": z.string(),
+	"Employee ID": z.string(),
+	"Hire Date": z.string(),
+	"Years Service": z.number()
+})
+
+type ErrorLog = {
+	message: string;
+	type: string;
+}
+
 const files = ref<File[]>([]);
-const errors = ref<string[]>([]);
+const errors = ref<ErrorLog[]>([]);
 const activityData = <ActivityInfo[]>[];
 let careLogs = <CareLog[]>[];
 let ptoData = <PTOLog[]>[];
@@ -108,6 +147,14 @@ async function getData() {
 
 function parseActivityContent(content: string): ActivityInfo | null {
 	try {
+		if (content.length < 1) {
+			errors.value.push({
+				message: `Content length to short nothing to parse`,
+				type: 'error'
+			})
+			hasErrors.value = true;
+			endOfErrors();
+		}
 		// Extract date: "on 09/09/2025"
 		const dateMatch = content.match(/on (\d{2}\/\d{2}\/\d{4})/i)
 		const date = dateMatch ? dateMatch[1] : ''
@@ -120,9 +167,17 @@ function parseActivityContent(content: string): ActivityInfo | null {
 		const endMatch = content.match(/to (\d{1,2}:\d{2} [AP]M)/i)
 		const endTime = endMatch ? endMatch[1] : ''
 
-		// Extract caregiver: "assigned to caregiver Karen Frauens"
+		// Extract caregiver: "assigned to caregiver Karen Smith"
 		const caregiverMatch = content.match(/assigned to caregiver ([^*)\n]+?)(?:\s*\*|\s*\))/i)
 		const caregiver = caregiverMatch ? caregiverMatch[1]!.trim() : ''
+		if (!caregiver) {
+			errors.value.push({
+				message: `Unable to parse the caregivers name from "${content}", check for any special characters or missing name`,
+				type: 'error'
+			})
+			hasErrors.value = true;
+			endOfErrors();
+		}
 		if (date && startTime && endTime && caregiver) {
 			// Calculate duration
 			const durationHours = calculateDuration(date, startTime, endTime)
@@ -222,6 +277,23 @@ async function processExcel(file: File, type: string): Promise<void> {
 				const jsonData = utils.sheet_to_json(worksheet!, { raw: true });
 				switch(type) {
 					case 'care_logs':
+						try {
+							careLogSchema.parse(jsonData[0])	
+						} catch (error) {
+							if (error instanceof z.ZodError) {
+								let message = '';
+								for (let i = 0; i < error.issues.length; i++) {
+									message += "Column: " + error.issues[i].path + ' \n';
+									message += "issue: " + error.issues[i].message + '\n';
+									
+								}
+								errors.value.push({
+									message: `Care Log Schema invalid: \n${message}`,
+									type: 'error',
+								});
+								return;
+							}
+						}
 						const processedData = (jsonData as CareLog[]).map((row: CareLog) => {
 							// Convert any Date objects to ISO strings
 							Object.keys(row).forEach((key: string) => {
@@ -236,9 +308,27 @@ async function processExcel(file: File, type: string): Promise<void> {
 							
 							return row;
 						});
+
 						careLogs = processedData as CareLog[];
 						break;
 					case 'sick_activity':
+						try {
+							activityLogSchema.parse(jsonData[0])	
+						} catch (error) {
+							if (error instanceof z.ZodError) {
+								let message = '';
+								for (let i = 0; i < error.issues.length; i++) {
+									message += "Column: " + error.issues[i].path + ' \n';
+									message += "issue: " + error.issues[i].message + '\n';
+									
+								}
+								errors.value.push({
+									message: `All Activity Schema invalid: \n${message}`,
+									type: 'error',
+								});
+								return;
+							}
+						}
 						for (let i = 0; i < jsonData.length; i++) {
 							const parsedDescription = parseActivityContent((jsonData[i] as ActivityLog)['Description'] || '');
 							const data: ActivityInfo = {
@@ -253,9 +343,45 @@ async function processExcel(file: File, type: string): Promise<void> {
 						}
 						break;
 					case 'pto':
+						try {
+							console.log(jsonData)
+							ptoLogSchema.parse(jsonData[0])	
+						} catch (error) {
+							if (error instanceof z.ZodError) {
+								let message = '';
+								for (let i = 0; i < error.issues.length; i++) {
+									message += "Column: " + error.issues[i].path + ' \n';
+									message += "issue: " + error.issues[i].message + ' \n';
+									
+								}
+								errors.value.push({
+									message: `PTO Log Schema invalid: \n${message}`,
+									type: 'error',
+								});
+								return;
+							}
+								return;
+						}
 						ptoData = jsonData as PTOLog[];
 						break;
 					case 'hire_date':
+						try {
+							hireLogSchema.parse(jsonData[0])	
+						} catch (error) {
+							if (error instanceof z.ZodError) {
+								let message = '';
+								for (let i = 0; i < error.issues.length; i++) {
+									message += "Column: " + error.issues[i].path + ' \n';
+									message += "issue: " + error.issues[i].message + '\n';
+									
+								}
+								errors.value.push({
+									message: `Hire Date Schema invalid: \n${message}`,
+									type: 'error',
+								});
+								return;
+							}
+						}
 						hireData = jsonData as HireLog[];
 						break;
 					default:
@@ -283,31 +409,45 @@ function processData() {
 	
 	// check that we have some data on each of the required arrays
 	if (activityData.length === 0) {
-		errors.value.push('No activity data found, please check the file name starts with all_activity and is the correct format');
+		errors.value.push({
+			message: 'No activity data found, please check the file name starts with all_activity and is the correct format',
+			type: "error"
+		});
 		hasErrors.value = true;
 		endOfErrors();
 		return;
 	}
 	if (careLogs.length === 0) {
-		errors.value.push('No care log data found, please check the file name starts with care_logs and is the correct format');
+		errors.value.push({
+			message: 'No care log data found, please check the file name starts with care_logs and is the correct format',
+			type: 'error'
+		});
 		hasErrors.value = true;
 		endOfErrors();
 		return;
 	}
 	if (ptoData.length === 0) {
-		errors.value.push('No PTO data found, please check the file name starts with pto and is the correct format');
+		errors.value.push({
+			message: 'No PTO data found, please check the file name starts with pto and is the correct format',
+			type: 'error'
+		});
 		hasErrors.value = true;
 		endOfErrors();
 		return;
 	}
 	if (hireData.length === 0) {
-		errors.value.push('No hire date data found, please check the file name starts with hire_date and is the correct format');
+		errors.value.push({
+			message: 'No hire date data found, please check the file name starts with hire_date and is the correct format',
+			type: 'error'
+		});
 		hasErrors.value = true;
 		endOfErrors();
 		return;
 	}
+	// loop over the sick activity data and match dat from other files to build a full record
 	for (let i = 0; i < activityData.length; i++) {
 		const activity = activityData[i] as ActivityInfo;
+		// merge the activity record to the full record data
 		const fullEntry: FullData = {
 			...activity,
 			rate: null,
@@ -323,12 +463,13 @@ function processData() {
 			approvedHours: 0,
 			totalPay: 0
 		};
+		// loop through the care logs and update the rate and employee id by matching the activity cargiver name
 		for (let j = 0; j < careLogs.length; j++) {
 			const care = careLogs[j];
 			const careGiverName = care!["Caregiver Name"];
-      // need to clean up the carelog caregiver name if they have an appended * in the name
-      const careName = careGiverName.split(' *');
-      const cname = careName.length > 1 ? careName[0] : careGiverName;
+			// need to clean up the care-log caregiver name if they have an appended * in the name
+			const careName = careGiverName.split(' *');
+			const cname = careName.length > 1 ? careName[0] : careGiverName;
 			if (activity.caregiver === cname && (
 				(care!["Official Clock In"] && activity.date === care!["Official Clock In"].split('T')[0]) || 
 				(care!["Official Clock Out"] && activity.date === care!["Official Clock Out"].split('T')[0]))
@@ -338,8 +479,12 @@ function processData() {
 				break;
 			}
 		}
+		// check for employee rate or id is defined
 		if (fullEntry.rate === null || fullEntry.employeeId === null) {
-			errors.value.push(`Could not find matching caregiver in care log for activity: ${activity.rawText}`);
+			errors.value.push({
+				message: `Could not find matching caregiver in care log for activity: ${activity.rawText}`,
+				type: 'warn'
+			});
 			hasErrors.value = true;
 			endOfErrors();
 			continue;
@@ -364,7 +509,10 @@ function processData() {
 		}
 		// check that there is a hire date
 		if (!fullEntry.hireDate) {
-			errors.value.push(`No hire date found for activity: ${activity.rawText}`);
+			errors.value.push({
+				message: `No hire date found for activity: ${activity.rawText}`,
+				type: 'warn'
+			});
 			hasErrors.value = true;
 			endOfErrors();
 			continue;
@@ -383,7 +531,10 @@ function processData() {
 		}
 		// if no plan found then log an error
 		if (!fullEntry.plan) {
-			errors.value.push(`No PTO plan found for activity: ${activity.rawText}`);
+			errors.value.push({
+				message: `No PTO plan found for caregiver ${fullEntry.caregiver}, employee ID's didn't match: employee ID: ${fullEntry.employeeId}`,
+				type: 'error'
+			});
 			hasErrors.value = true;
 			endOfErrors();
 			continue;
@@ -471,7 +622,7 @@ function saveData() {
 			totalPay: totalPaySum
 		}
 	];
-	// sheet js create a new workbook with the fulldata and download it as sick_file.xlsx
+	// sheet js create a new workbook with the full data and download it as sick_file.xlsx
 	const wb = utils.book_new();
 	const ws = utils.json_to_sheet(dataWithTotal, {header: headers});
 	utils.book_append_sheet(wb, ws, 'Sick Data');
@@ -485,7 +636,10 @@ function saveData() {
 	a.click();
 	// remove the element
 	URL.revokeObjectURL(url);
-	errors.value.push('Data saved to sick_file.xlsx');
+	errors.value.push({
+		message: 'Data saved to sick_file.xlsx',
+		type: 'success'
+	});
 	endOfErrors();
 	a.remove();
 }
@@ -541,7 +695,7 @@ async function endOfErrors() {
 			<div id="errors" class="errors-wrapper">
 				<p v-if="errors.length === 0">No errors</p>
 				<ol style="padding: 0;">
-					<li style="list-style: none;" v-for="(error, index) in errors" :key="index">{{ error }}</li>
+					<li style="list-style: none; white-space: break-spaces;" v-for="(error, index) in errors" :key="index" class="log-message" :class="error.type">{{ error.message }}</li>
 				</ol>
 			</div>
 		</aside>
@@ -568,6 +722,17 @@ aside {
 	display: block;
 	border-radius: 4px;
 	max-height: 400px;
-	overflow-y: auto;
+	overflow-y: auto;.log-message.error {
+  border: 1px solid red;
+}
+}
+.log-message.error {
+  border: 1px solid red;
+}
+.log-message.warn {
+  border: 1px solid orange;
+}
+.log-message.success {
+  border: 1px solid green;
 }
 </style>

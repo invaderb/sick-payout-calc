@@ -21,7 +21,8 @@
   "dependencies": {
     "vue": "^3.5.22",
     "vue-router": "^4.5.1",
-	"xlsx" : "npm:xlsx-republish@0.20.3"
+    "xlsx": "npm:xlsx-republish@0.20.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@prettier/plugin-oxc": "^0.0.4",
