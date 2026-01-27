@@ -283,9 +283,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' \n';
-									message += "issue: " + error.issues[i].message + '\n';
-									
+									message += "Column: " + error.issues[i].path + ' missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `Care Log Schema invalid: \n${message}`,
@@ -318,9 +316,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' \n';
-									message += "issue: " + error.issues[i].message + '\n';
-									
+									message += "Column: " + error.issues[i].path + ' missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `All Activity Schema invalid: \n${message}`,
@@ -350,9 +346,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' \n';
-									message += "issue: " + error.issues[i].message + ' \n';
-									
+									message += "Column: " + error.issues[i].path + ' missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `PTO Log Schema invalid: \n${message}`,
@@ -371,9 +365,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' \n';
-									message += "issue: " + error.issues[i].message + '\n';
-									
+									message += "Column: " + error.issues[i].path + ' missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `Hire Date Schema invalid: \n${message}`,
