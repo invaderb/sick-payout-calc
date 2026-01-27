@@ -39,8 +39,8 @@ interface CareLog {
 
 const careLogSchema = z.object({
 	"Caregiver Name": z.string(),
-	"Official Clock In": z.string(),
-	"Official Clock Out": z.string(),
+	"Official Clock In": z.string().or(z.date()),
+	"Official Clock Out": z.string().or(z.date()),
 	"Pay Rate Amount": z.number(),
 	"Caregiver ID": z.string()
 })
@@ -69,8 +69,8 @@ interface PTOLog {
 const ptoLogSchema = z.object({
 	"Employee Name": z.string(),
 	"Employee ID": z.string(),
-	"Accrue Thru Date": z.string(),
-	"Year Ending": z.string(),
+	"Accrue Thru Date": z.string().or(z.date()),
+	"Year Ending": z.string().or(z.date()),
 	"Plan Name": z.string(),
 	"Accrual Rate": z.number(),
 	"Carry Over": z.number(),
@@ -89,7 +89,7 @@ interface HireLog {
 const hireLogSchema = z.object({
 	"Employee Name": z.string(),
 	"Employee ID": z.string(),
-	"Hire Date": z.string(),
+	"Hire Date": z.string().or(z.date()),
 	"Years Service": z.number()
 })
 
