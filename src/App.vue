@@ -70,7 +70,7 @@ function handleConfirm() {
 				• There are 4 required files that must be provided in the Excel format
 				<ul>
 					<li>1. Employee Sick Activity File - This file should contain a list of employee sick activities.</li>
-					<li>2. PTO File - This file should detail the various PTO plans available, including accrual rates and carry-over values etc.</li>
+					<li>2. PTO File - <u>From ER Portal</u> - This file should detail the various PTO plans available, including accrual rates and carry-over values etc.</li>
 					<li>3. Care Logs File - This file should contain the caregivers rates over the last pay period.</li>
 					<li>4. Employee Hire Date File - This file should provide the current balance of PTO for each employee.</li>
 				</ul>
