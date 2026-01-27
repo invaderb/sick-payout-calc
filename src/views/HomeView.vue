@@ -46,12 +46,10 @@ const careLogSchema = z.object({
 })
 
 interface ActivityLog {
-	Date: string
 	Description: string
 }
 
 const activityLogSchema = z.object({
-	Date: z.string(),
 	Description: z.string()
 })
 
