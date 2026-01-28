@@ -275,7 +275,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' - missing or invalid data\n';
+									message += "Column: " + error.issues[i]!.path + ' - missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `Care Log Schema invalid: \n${message}`,
@@ -308,7 +308,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' - missing or invalid data\n';
+									message += "Column: " + error.issues[i]!.path + ' - missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `All Activity Schema invalid: \n${message}`,
@@ -338,7 +338,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' - missing or invalid data\n';
+									message += "Column: " + error.issues[i]!.path + ' - missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `PTO Log Schema invalid: \n${message}`,
@@ -357,7 +357,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i].path + ' - missing or invalid data\n';
+									message += "Column: " + error.issues[i]!.path + ' - missing or invalid data\n';
 								}
 								errors.value.push({
 									message: `Hire Date Schema invalid: \n${message}`,
@@ -524,7 +524,7 @@ function processData() {
 			continue;
 		}
 
-		// calculate the approved hours based on the limit of the plan and the balance what is lower unless they are not qualified then 0
+		// calculate the approved hours based on the limit of the plan and the balance what ever is lower unless they are not qualified then 0
 		if (fullEntry.isQualified) {
 			// need to check if this caregiver already another activityData in the same pay period and if so, update the ytdUsed and balance before calculating approved hours
 			// loop in reverse order to get the most recent and if found break
@@ -537,7 +537,7 @@ function processData() {
 					// update the ytdUsed and balance on the nextActivity
 					fullEntry.ytdUsed = fullEntry.ytdUsed + (fullData[m]!.approvedHours || 0);
 					fullEntry.balance = fullEntry.balance - (fullData[m]!.approvedHours || 0);
-					break;
+					continue;
 				}
 			}
 			// calculate the approved hours based on the plan limit, the ytd used and the balance
