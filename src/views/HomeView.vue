@@ -17,7 +17,6 @@ interface FullData extends ActivityInfo {
 	employeeId: string | null
 	hireDate: string
 	requirementDate: string
-	remainingDays: number;
 	isQualified: boolean
 	plan: string
 	planLimit: number
@@ -35,7 +34,8 @@ interface CareLog {
 	"Official Clock Out": string
 	"Pay Rate Amount": number
 	"Caregiver ID": string // same as Employee ID in PTOLog
-	[key: string]: string | number | Date | undefined
+	"is_used"?: boolean
+	[key: string]: string | number | Date | boolean | undefined
 }
 
 const careLogSchema = z.object({
@@ -447,7 +447,6 @@ function processData() {
 			canUseLimit: 0,
 			balance: 0,
 			requirementDate: '',
-			remainingDays: 0,
 			isQualified: false,
 			approvedHours: 0,
 			totalPay: 0
@@ -459,12 +458,13 @@ function processData() {
 			// need to clean up the care-log caregiver name if they have an appended * in the name
 			const careName = careGiverName.split(' *');
 			const cname = careName.length > 1 ? careName[0] : careGiverName;
-			if (activity.caregiver === cname && (
+			if (!careLogs[j]?.is_used && activity.caregiver === cname && (
 				(care!["Official Clock In"] && activity.date === care!["Official Clock In"].split('T')[0]) || 
 				(care!["Official Clock Out"] && activity.date === care!["Official Clock Out"].split('T')[0]))
 			) {
 				fullEntry.rate = care!["Pay Rate Amount"];
 				fullEntry.employeeId = care!["Caregiver ID"];
+				careLogs[j]!['is_used'] = true;
 				break;
 			}
 		}
@@ -493,15 +493,13 @@ function processData() {
 				// check if the activity date is after the requirement date
 				const activityDate = new Date(fullEntry.date);
 				fullEntry.isQualified = activityDate >= requirementDate;
-				const remainingDays = Math.ceil((requirementDate.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24));
-				fullEntry.remainingDays = remainingDays;
 				break;
 			}
 		}
 		// check that there is a hire date
 		if (!fullEntry.hireDate) {
 			errors.value.push({
-				message: `No hire date found for caregiver ${fullEntry.caregiver}, employee ID's didn't match: employee ID: ${fullEntry.employeeId}console.warn('no caregiver'). check hire_date and care_logs files`,
+				message: `No hire date found for caregiver ${fullEntry.caregiver}, employee ID's didn't match: employee ID: ${fullEntry.employeeId}. check hire_date and care_logs files`,
 				type: 'warn'
 			});
 			hasErrors.value = true;
@@ -510,8 +508,11 @@ function processData() {
 		}
 		// check if the hire date qualifies
 		if (!fullEntry.isQualified) {
+			const hireDateTimeAdd90 = new Date(fullEntry.hireDate).getTime() + (90 * 24 * 60 * 60 * 1000);
+			const activityDateTime = new Date(fullEntry.date).getTime();
+			const remainingDays = Math.ceil((hireDateTimeAdd90 - activityDateTime) / (1000 * 60 * 60 * 24));
 			errors.value.push({
-				message: `Caregiver ${fullEntry.caregiver} hire date is not past 90 days from the activity date no need to calculate PTO; Hire Date ${fullEntry.hireDate} | remaining days ${fullEntry.remainingDays}`,
+				message: `Caregiver ${fullEntry.caregiver} hire date is not past 90 days from the activity date no need to calculate PTO; Hire Date ${fullEntry.hireDate} | remaining days ${remainingDays}`,
 				type: 'warn'
 			});
 			hasErrors.value = true;
