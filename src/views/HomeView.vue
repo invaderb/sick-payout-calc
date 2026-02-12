@@ -17,6 +17,7 @@ interface FullData extends ActivityInfo {
 	employeeId: string | null
 	hireDate: string
 	requirementDate: string
+	remainingDays: number;
 	isQualified: boolean
 	plan: string
 	planLimit: number
@@ -332,7 +333,6 @@ async function processExcel(file: File, type: string): Promise<void> {
 						break;
 					case 'pto':
 						try {
-							console.log(jsonData)
 							ptoLogSchema.parse(jsonData[0])	
 						} catch (error) {
 							if (error instanceof z.ZodError) {
@@ -431,6 +431,10 @@ function processData() {
 	// loop over the sick activity data and match dat from other files to build a full record
 	for (let i = 0; i < activityData.length; i++) {
 		const activity = activityData[i] as ActivityInfo;
+		if (!activity.caregiver) {
+			console.warn('no caregiver name', activity.rawText);
+			continue;
+		}
 		// merge the activity record to the full record data
 		const fullEntry: FullData = {
 			...activity,
@@ -443,6 +447,7 @@ function processData() {
 			canUseLimit: 0,
 			balance: 0,
 			requirementDate: '',
+			remainingDays: 0,
 			isQualified: false,
 			approvedHours: 0,
 			totalPay: 0
@@ -466,7 +471,7 @@ function processData() {
 		// check for employee rate or id is defined
 		if (fullEntry.rate === null || fullEntry.employeeId === null) {
 			errors.value.push({
-				message: `Could not find matching caregiver in care log for activity: ${activity.rawText}`,
+				message: `No matching caregiver ${fullEntry.caregiver} in care_logs by name for activity: ${activity.rawText}. check all_activity and care_logs files.`,
 				type: 'warn'
 			});
 			hasErrors.value = true;
@@ -488,19 +493,32 @@ function processData() {
 				// check if the activity date is after the requirement date
 				const activityDate = new Date(fullEntry.date);
 				fullEntry.isQualified = activityDate >= requirementDate;
+				const remainingDays = Math.ceil((requirementDate.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24));
+				fullEntry.remainingDays = remainingDays;
 				break;
 			}
 		}
 		// check that there is a hire date
 		if (!fullEntry.hireDate) {
 			errors.value.push({
-				message: `No hire date found for activity: ${activity.rawText}`,
+				message: `No hire date found for caregiver ${fullEntry.caregiver}, employee ID's didn't match: employee ID: ${fullEntry.employeeId}console.warn('no caregiver'). check hire_date and care_logs files`,
 				type: 'warn'
 			});
 			hasErrors.value = true;
 			endOfErrors();
 			continue;
 		}
+		// check if the hire date qualifies
+		if (!fullEntry.isQualified) {
+			errors.value.push({
+				message: `Caregiver ${fullEntry.caregiver} hire date is not past 90 days from the activity date no need to calculate PTO; Hire Date ${fullEntry.hireDate} | remaining days ${fullEntry.remainingDays}`,
+				type: 'warn'
+			});
+			hasErrors.value = true;
+			endOfErrors();
+			continue;
+		}
+		
 		// loop through the PTO data to find the plan, accrual rate, carry over, pay period accrued, pay period used, balance
 		for (let l = 0; l < ptoData.length; l++) {
 			const pto = ptoData[l];
@@ -516,7 +534,7 @@ function processData() {
 		// if no plan found then log an error
 		if (!fullEntry.plan) {
 			errors.value.push({
-				message: `No PTO plan found for caregiver ${fullEntry.caregiver}, employee ID's didn't match: employee ID: ${fullEntry.employeeId}`,
+				message: `No PTO plan found for caregiver ${fullEntry.caregiver}, employee ID's didn't match: employee ID: ${fullEntry.employeeId}. check pto and care_log files`,
 				type: 'error'
 			});
 			hasErrors.value = true;
