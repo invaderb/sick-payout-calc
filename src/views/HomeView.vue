@@ -165,7 +165,7 @@ function parseActivityContent(content: string): ActivityInfo | null {
 		const caregiver = caregiverMatch ? caregiverMatch[1]!.trim() : ''
 		if (!caregiver) {
 			errors.value.push({
-				message: `Unable to parse the caregivers name from "${content}", check for any special characters or missing name`,
+				message: `Unable to parse the caregivers name from all_activity in "${content}", check for any special characters or missing name`,
 				type: 'error'
 			})
 			hasErrors.value = true;
@@ -723,9 +723,9 @@ aside {
 	padding: 8px;
 	display: block;
 	border-radius: 4px;
-	max-height: 400px;
+	max-height: 600px;
 	overflow-y: auto;.log-message.error {
-  border: 1px solid red;
+	border: 1px solid red;
 }
 }
 .log-message.error {
