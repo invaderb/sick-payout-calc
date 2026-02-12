@@ -276,7 +276,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i]!.path + ' - missing or invalid data\n';
+									message += `Column: ${error.issues[i]!.path} - missing or invalid data\n`;
 								}
 								errors.value.push({
 									message: `Care Log Schema invalid: \n${message}`,
@@ -309,7 +309,7 @@ async function processExcel(file: File, type: string): Promise<void> {
 							if (error instanceof z.ZodError) {
 								let message = '';
 								for (let i = 0; i < error.issues.length; i++) {
-									message += "Column: " + error.issues[i]!.path + ' - missing or invalid data\n';
+									message += `Column: ${error.issues[i]!.path} - missing or invalid data\n`;
 								}
 								errors.value.push({
 									message: `All Activity Schema invalid: \n${message}`,
@@ -481,7 +481,7 @@ function processData() {
 		// loop through the Hire Data to find the hire date and get the full name to match against the PTO data
 		for (let k = 0; k < hireData.length; k++) {
 			const hire = hireData[k];
-			if (fullEntry.employeeId === hire!["Employee ID"]) {
+			if (hire!["Employee ID"] && fullEntry.employeeId === hire!["Employee ID"]) {
 				fullEntry.hireDate = hire!["Hire Date"];
 				// calculate the requirement date based on the hire date + 90 days
 				const hireDate = new Date(fullEntry.hireDate);
@@ -523,7 +523,7 @@ function processData() {
 		for (let l = 0; l < ptoData.length; l++) {
 			const pto = ptoData[l];
 			// ensure the employee name is fully uppercase and has no comma
-			if (fullEntry.employeeId === pto?.['Employee ID']) {
+			if (pto!['Employee ID'] && fullEntry.employeeId === pto!['Employee ID']) {
 				fullEntry.plan = pto!["Plan Name"];
 				fullEntry.planLimit = SICK_POLICY[fullEntry.plan as keyof typeof SICK_POLICY] || 0;
 				fullEntry.ytdUsed = pto!["Used"]; // YTD used
